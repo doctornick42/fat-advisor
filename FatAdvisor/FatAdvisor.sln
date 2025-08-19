@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35931.197 d17.13
+VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FatAdvisor.Console", "FatAdvisor.Console\FatAdvisor.Console.csproj", "{A3ED4067-8D7E-4215-A9EA-0C8B67D1176B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FatAdvisor.FatSecretApi", "FatAdvisor.FatSecretApi\FatAdvisor.FatSecretApi.csproj", "{38E380D2-FA93-452F-839F-493E348178C1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FatAdvisor.Ai", "FatAdvisor.Ai\FatAdvisor.Ai.csproj", "{D765963F-0D2B-42FD-A268-ACA39C4624A9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{A3ED4067-8D7E-4215-A9EA-0C8B67D1176B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A3ED4067-8D7E-4215-A9EA-0C8B67D1176B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A3ED4067-8D7E-4215-A9EA-0C8B67D1176B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38E380D2-FA93-452F-839F-493E348178C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38E380D2-FA93-452F-839F-493E348178C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38E380D2-FA93-452F-839F-493E348178C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38E380D2-FA93-452F-839F-493E348178C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D765963F-0D2B-42FD-A268-ACA39C4624A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D765963F-0D2B-42FD-A268-ACA39C4624A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D765963F-0D2B-42FD-A268-ACA39C4624A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D765963F-0D2B-42FD-A268-ACA39C4624A9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

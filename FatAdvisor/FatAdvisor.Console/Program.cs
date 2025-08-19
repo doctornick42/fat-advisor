@@ -1,53 +1,80 @@
 ﻿using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 using Microsoft.SemanticKernel;
 using Microsoft.Extensions.Configuration;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+using FatAdvisor.FatSecretApi;
+using FatAdvisor.Ai;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
-// Build config to read from secrets
-var builder = new ConfigurationBuilder()
-    .AddUserSecrets<Program>()   // <Program> means it will look for UserSecretsId in Program.csproj
-    .AddEnvironmentVariables();  // optional: fallback to env vars
-
-var config = builder.Build();
-
-ChatHistory chatHistory = [];
-chatHistory.AddUserMessage("Hey, please introduce yourself");
-
-var apiKey = config["GitHubModels:ApiKey"];
-var endpoint = config["GitHubModels:Endpoint"];
-var modelId = "gpt-4o-mini";
-
-var kernelBuilder = Kernel.CreateBuilder();
-kernelBuilder.AddOpenAIChatCompletion(
-    modelId: modelId,
-    apiKey: apiKey,
-    endpoint: new Uri(endpoint)
-);
-
-//Plugin registration example
-//kernelBuilder.Plugins.AddFromType<BookTravelPlugin>("BookTravel");
-
-var kernel = kernelBuilder.Build();
-
-var settings = new AzureOpenAIPromptExecutionSettings()
+internal class Program
 {
-    FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
-};
+    private static async Task Main(string[] args)
+    {
+        // Build config to read from secrets
+        var builder = new ConfigurationBuilder()
+            .AddUserSecrets<Program>()   // <Program> means it will look for UserSecretsId in Program.csproj
+            .AddEnvironmentVariables();  // optional: fallback to env vars
 
-var chatCompletion = kernel.GetRequiredService<IChatCompletionService>();
+        var config = builder.Build();
 
-var response = await chatCompletion.GetChatMessageContentAsync(chatHistory, settings, kernel);
+        var profileTokenStorage = new ProfileTokenStorage();
+        
+        var apiClient = new FatSecretApiClient(
+            consumerKey: config["FatSecret:ConsumerKey"],
+            consumerSecret: config["FatSecret:ConsumerSecret"],
+            accessToken: null,
+            accessTokenSecret: null);
 
-Console.WriteLine(response.Content);
-chatHistory.AddMessage(response!.Role, response!.Content!);
+        var oauth = new FatSecretOAuth1(
+            http: new HttpClient(),
+            consumerKey: config["FatSecret:ConsumerKey"],
+            consumerSecret: config["FatSecret:ConsumerSecret"]);
 
-//Plugin example
-//public class BookTravelPlugin
-//{
-//    [KernelFunction("book_flight")]
-//    [Description("Book travel given location and date")]
-//    public async Task<string> BookFlight(DateTime date, string location)
-//    {
-//        return await Task.FromResult($"Travel was booked to {location} on {date}");
-//    }
-//}
+        var dataPlugin = new FatSecretProfileDataPlugin(apiClient, oauth, profileTokenStorage);
+
+        ChatHistory chatHistory = [];
+        chatHistory.AddUserMessage("Hey, please analyze my food for today and give me recommendation what to eat today for a dinner?");
+        chatHistory.AddUserMessage("Consider that I had a cardio/core training session today in gym");
+
+        var apiKey = config["GitHubModels:ApiKey"];
+        var endpoint = config["GitHubModels:Endpoint"];
+        var modelId = "gpt-4o-mini";
+
+        var kernelBuilder = Kernel.CreateBuilder();
+        kernelBuilder.AddOpenAIChatCompletion(
+            modelId: modelId,
+            apiKey: apiKey,
+            endpoint: new Uri(endpoint)
+        );
+
+        //Plugin registration example
+        kernelBuilder.Plugins.AddFromObject(dataPlugin);
+
+        kernelBuilder.Services.AddLogging(logging =>
+        {
+            logging.AddConsole();
+            logging.SetMinimumLevel(LogLevel.Debug);
+        });
+
+        var kernel = kernelBuilder.Build();
+
+        var settings = new OpenAIPromptExecutionSettings()
+        {
+            FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
+        };
+
+        var chatCompletion = kernel.GetRequiredService<IChatCompletionService>();
+
+        var response = await chatCompletion.GetChatMessageContentAsync(chatHistory, settings, kernel);
+
+        Console.WriteLine(response.Content);
+
+        foreach (var kvp in response.Metadata)
+        {
+            Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+        }
+
+        chatHistory.AddMessage(response!.Role, response!.Content!);
+    }
+}
