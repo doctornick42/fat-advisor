@@ -1,6 +1,7 @@
-﻿using FatAdvisor.Ai.Models;
+﻿using FatAdvisor.Ai;
+using FatAdvisor.Ai.Models;
 
-namespace FatAdvisor.Ai
+namespace FatAdvisor.FatSecretAi
 {
     public class ProfileTokenStorage : IProfileTokenStorage
     {

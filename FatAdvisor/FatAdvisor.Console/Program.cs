@@ -1,80 +1,52 @@
-﻿using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel;
-using Microsoft.Extensions.Configuration;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
+﻿using Microsoft.Extensions.Configuration;
 using FatAdvisor.FatSecretApi;
 using FatAdvisor.Ai;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Autofac.Extensions.DependencyInjection;
+using Autofac;
+using Microsoft.Extensions.Hosting;
 
-internal class Program
+namespace FatAdvisor.Console
 {
-    private static async Task Main(string[] args)
+    internal class Program
     {
-        // Build config to read from secrets
-        var builder = new ConfigurationBuilder()
-            .AddUserSecrets<Program>()   // <Program> means it will look for UserSecretsId in Program.csproj
-            .AddEnvironmentVariables();  // optional: fallback to env vars
-
-        var config = builder.Build();
-
-        var profileTokenStorage = new ProfileTokenStorage();
-        
-        var apiClient = new FatSecretApiClient(
-            consumerKey: config["FatSecret:ConsumerKey"],
-            consumerSecret: config["FatSecret:ConsumerSecret"],
-            accessToken: null,
-            accessTokenSecret: null);
-
-        var oauth = new FatSecretOAuth1(
-            http: new HttpClient(),
-            consumerKey: config["FatSecret:ConsumerKey"],
-            consumerSecret: config["FatSecret:ConsumerSecret"]);
-
-        var dataPlugin = new FatSecretProfileDataPlugin(apiClient, oauth, profileTokenStorage);
-
-        ChatHistory chatHistory = [];
-        chatHistory.AddUserMessage("Hey, please analyze my food for today and give me recommendation what to eat today for a dinner?");
-        chatHistory.AddUserMessage("Consider that I had a cardio/core training session today in gym");
-
-        var apiKey = config["GitHubModels:ApiKey"];
-        var endpoint = config["GitHubModels:Endpoint"];
-        var modelId = "gpt-4o-mini";
-
-        var kernelBuilder = Kernel.CreateBuilder();
-        kernelBuilder.AddOpenAIChatCompletion(
-            modelId: modelId,
-            apiKey: apiKey,
-            endpoint: new Uri(endpoint)
-        );
-
-        //Plugin registration example
-        kernelBuilder.Plugins.AddFromObject(dataPlugin);
-
-        kernelBuilder.Services.AddLogging(logging =>
+        private static async Task Main(string[] args)
         {
-            logging.AddConsole();
-            logging.SetMinimumLevel(LogLevel.Debug);
-        });
+            var host = Host.CreateDefaultBuilder(args)
+                    .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+                    .ConfigureAppConfiguration((context, config) =>
+                    {
+                        config.AddUserSecrets<Program>();
+                        config.AddEnvironmentVariables();
+                    })
+                    .ConfigureLogging(logging =>
+                    {
+                        logging.ClearProviders();
+                        logging.AddConsole();
+                        logging.SetMinimumLevel(LogLevel.Debug);
+                    })
+                    .ConfigureServices((context, services) =>
+                    {
+                        services.AddHttpClient("FatSecretApiClient", client =>
+                        {
+                            client.BaseAddress = new Uri("https://www.fatsecret.com/");
+                            client.Timeout = TimeSpan.FromSeconds(300);
+                        });
+                    })
+                    .ConfigureContainer<ContainerBuilder>((context, builder) =>
+                    {
+                        // Register your modules here
+                        builder.RegisterModule(new FatSecretAiModule(context.Configuration));
+                        builder.RegisterModule(new FatSecretApiModule(context.Configuration));
 
-        var kernel = kernelBuilder.Build();
+                        builder.RegisterType<ConsoleAppRunner>().AsSelf();
+                    })
+                    .Build();
 
-        var settings = new OpenAIPromptExecutionSettings()
-        {
-            FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
-        };
-
-        var chatCompletion = kernel.GetRequiredService<IChatCompletionService>();
-
-        var response = await chatCompletion.GetChatMessageContentAsync(chatHistory, settings, kernel);
-
-        Console.WriteLine(response.Content);
-
-        foreach (var kvp in response.Metadata)
-        {
-            Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+            using var scope = host.Services.CreateScope();
+            var app = scope.ServiceProvider.GetRequiredService<ConsoleAppRunner>();
+            await app.RunAsync();
         }
-
-        chatHistory.AddMessage(response!.Role, response!.Content!);
     }
 }

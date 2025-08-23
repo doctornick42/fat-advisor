@@ -24,8 +24,6 @@ namespace FatAdvisor.Ai
         [Description("Get all the eaten food for today")]
         public async Task<string> GetTodaysFood()
         {
-            Console.WriteLine("DEBUG: get_todays_food called by SK");
-
             var accessTokenInfo = await _profileTokenStorage.FindTokenInStorage();
             if (accessTokenInfo == null)
             {
@@ -37,7 +35,6 @@ namespace FatAdvisor.Ai
 
             var todaysFood = await _fatSecretApiClient.GetTodayFoodsAsync();
             return todaysFood;
-
         }
 
         private async Task<TokenInfo> AuthorizeAndSaveToken()

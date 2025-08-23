@@ -8,6 +8,8 @@ namespace FatAdvisor.FatSecretApi
 {
     public class FatSecretOAuth1 : IFatSecretOAuth
     {
+        //TODO: handle auth exception and re-authorize user if needed
+
         private const string FatSecreyAuthorizeUrl = "https://authentication.fatsecret.com/oauth/authorize";
         private const string RequestTokenEndpointUrl = "https://authentication.fatsecret.com/oauth/request_token";
         private const string AccessTokenEndpointUrl = "https://authentication.fatsecret.com/oauth/access_token";
@@ -109,7 +111,12 @@ namespace FatAdvisor.FatSecretApi
         }
 
 
-        private string SignRequest(string method, string url, SortedDictionary<string, string> parameters, string consumerSecret, string? tokenSecret)
+        private static string SignRequest(
+            string method,
+            string url,
+            SortedDictionary<string, string> parameters,
+            string consumerSecret,
+            string tokenSecret)
         {
             string baseString = string.Join("&",
                 method,

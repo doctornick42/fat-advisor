@@ -7,15 +7,22 @@ namespace FatAdvisor.FatSecretApi
 {
     public class FatSecretApiClient : IFatSecretApiClient
     {
+        private readonly HttpClient _httpClient;
+
         private readonly string _consumerKey;
         private readonly string _consumerSecret;
         private string _accessToken;
         private string _accessTokenSecret;
 
-        private readonly HttpClient _httpClient = new HttpClient();
-
-        public FatSecretApiClient(string consumerKey, string consumerSecret, string accessToken, string accessTokenSecret)
+        public FatSecretApiClient(
+            HttpClient httpClient,
+            string consumerKey,
+            string consumerSecret,
+            string accessToken,
+            string accessTokenSecret)
         {
+            _httpClient = httpClient;
+
             _consumerKey = consumerKey;
             _consumerSecret = consumerSecret;
             _accessToken = accessToken;
