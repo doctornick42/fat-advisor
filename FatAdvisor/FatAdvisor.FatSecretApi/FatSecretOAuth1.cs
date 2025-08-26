@@ -33,7 +33,7 @@ namespace FatAdvisor.FatSecretApi
                 ["oauth_signature_method"] = "HMAC-SHA1",
                 ["oauth_timestamp"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
                 ["oauth_version"] = "1.0",
-                ["oauth_callback"] = callbackUrl
+                ["oauth_callback"] = string.IsNullOrEmpty(callbackUrl) ? "oob" : callbackUrl,
             };
 
             string signature = SignRequest("POST", RequestTokenEndpointUrl, parameters, _consumerSecret, null);
