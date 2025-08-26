@@ -69,13 +69,40 @@ namespace FatAdvisor.FatSecretApi
             return Convert.ToBase64String(hash);
         }
 
-        public async Task<string> GetTodayFoodsAsync()
+        public async Task<string> GetFoodsForDateAsync(DateTime date)
         {
             string url = "https://platform.fatsecret.com/rest/food-entries/v2";
 
-            var today = DateTime.UtcNow.Date; // midnight UTC today
+            int daysSinceEpoch = (int)(date - DateTime.UnixEpoch).TotalDays;
 
-            int daysSinceEpoch = (int)(today - DateTime.UnixEpoch).TotalDays;
+            var parameters = new SortedDictionary<string, string>
+            {
+                { "oauth_consumer_key", _consumerKey },
+                { "oauth_token", _accessToken },
+                { "oauth_nonce", Guid.NewGuid().ToString("N") },
+                { "oauth_signature_method", "HMAC-SHA1" },
+                { "oauth_timestamp", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString() },
+                { "oauth_version", "1.0" },
+                { "date", daysSinceEpoch.ToString() },
+                { "format", "json" }
+            };
+
+            string signature = SignRequest("GET", url, parameters, _consumerSecret, _accessTokenSecret);
+            parameters.Add("oauth_signature", signature);
+
+            string query = string.Join("&", parameters.Select(kvp =>
+                $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"));
+
+            string requestUrl = $"{url}?{query}";
+            var response = await _httpClient.GetAsync(requestUrl);
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        public async Task<string> GetWeightDiary(DateTime date)
+        {
+            string url = "https://platform.fatsecret.com/rest/weight/month/v2";
+
+            int daysSinceEpoch = (int)(date - DateTime.UnixEpoch).TotalDays;
 
             var parameters = new SortedDictionary<string, string>
             {

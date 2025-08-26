@@ -20,9 +20,9 @@ namespace FatAdvisor.Ai
             _profileTokenStorage = profileTokenStorage;
         }
 
-        [KernelFunction("get_todays_food")]
-        [Description("Get all the eaten food for today")]
-        public async Task<string> GetTodaysFood()
+        [KernelFunction("get_consumed_food")]
+        [Description("Get all the consumed food (food log) for selected day")]
+        public async Task<string> GetConsumedFood(DateTime date)
         {
             var accessTokenInfo = await _profileTokenStorage.FindTokenInStorage();
             if (accessTokenInfo == null)
@@ -33,7 +33,24 @@ namespace FatAdvisor.Ai
 
             _fatSecretApiClient.SetAccessToken(accessTokenInfo);
 
-            var todaysFood = await _fatSecretApiClient.GetTodayFoodsAsync();
+            var todaysFood = await _fatSecretApiClient.GetFoodsForDateAsync(date);
+            return todaysFood;
+        }
+
+        [KernelFunction("get_weight_diary")]
+        [Description("Get the weight diary for month bue to the specified date")]
+        public async Task<string> GetWeightDiaryForMonth(DateTime date)
+        {
+            var accessTokenInfo = await _profileTokenStorage.FindTokenInStorage();
+            if (accessTokenInfo == null)
+            {
+                // If no token is found, we need to authorize the user
+                accessTokenInfo = await AuthorizeAndSaveToken();
+            }
+
+            _fatSecretApiClient.SetAccessToken(accessTokenInfo);
+
+            var todaysFood = await _fatSecretApiClient.GetWeightDiary(date);
             return todaysFood;
         }
 

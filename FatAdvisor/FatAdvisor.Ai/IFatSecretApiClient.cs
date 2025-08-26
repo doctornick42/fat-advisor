@@ -6,7 +6,9 @@ namespace FatAdvisor.Ai
     {
         Task<string> GetMostEatenFoodsAsync();
 
-        Task<string> GetTodayFoodsAsync();
+        Task<string> GetFoodsForDateAsync(DateTime date);
+
+        Task<string> GetWeightDiary(DateTime date);
 
         void SetAccessToken(TokenInfo tokenInfo);
     }
